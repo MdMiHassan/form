@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:3306/form
+    username: root
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
