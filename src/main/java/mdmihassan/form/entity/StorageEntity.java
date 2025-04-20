@@ -78,11 +78,6 @@ public class StorageEntity {
             this.name = name;
         }
 
-        @Override
-        public String toString() {
-            return name;
-        }
-
         public static Extension of(String extension) {
             return switch (extension.toLowerCase()) {
                 case "mp4" -> MP4;
@@ -108,6 +103,11 @@ public class StorageEntity {
                 case "torrent" -> TORRENT;
                 default -> throw new IllegalArgumentException("Unsupported extension: " + extension);
             };
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 

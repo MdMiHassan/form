@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -30,6 +31,8 @@ public class UserToken {
     private User user;
 
     private String name;
+
+    private boolean enabled;
 
     @Column(updatable = false, unique = true)
     private String tokenHash;
@@ -56,10 +59,48 @@ public class UserToken {
         return authorities;
     }
 
+    public void setTokenAuthorities(List<GrantedAuthority> grantedAuthorities) {
+        List<TokenAuthorities> authorities = new ArrayList<>();
+        for (GrantedAuthority auth : grantedAuthorities) {
+            authorities.add(TokenAuthorities.of(auth.getAuthority()));
+        }
+        tokenAuthorities = authorities;
+    }
+
+    public void addTokenAuthorities(List<GrantedAuthority> grantedAuthorities) {
+        if (tokenAuthorities == null) {
+            tokenAuthorities = new ArrayList<>();
+        }
+        for (GrantedAuthority auth : grantedAuthorities) {
+            tokenAuthorities.add(TokenAuthorities.of(auth.getAuthority()));
+        }
+    }
+
+    public boolean isValidToken() {
+        return enabled && (credentialsExpiration == null || Timestamp.from(Instant.now()).before(credentialsExpiration));
+    }
+
+    public void disable() {
+        enabled = false;
+    }
+
     private enum TokenAuthorities {
+
         FORM_CREATE,
         FORM_UPDATE,
-        FORM_DELETE,
+        FORM_DELETE;
+
+        public static TokenAuthorities of(String tokenAuthorities) {
+            if (tokenAuthorities == null) {
+                return null;
+            }
+            return switch (tokenAuthorities.toLowerCase()) {
+                case "form_create" -> FORM_CREATE;
+                case "form_update" -> FORM_UPDATE;
+                case "form_delete" -> FORM_DELETE;
+                default -> throw new IllegalStateException("Unexpected value: " + tokenAuthorities.toLowerCase());
+            };
+        }
     }
 
 }

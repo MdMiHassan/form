@@ -19,13 +19,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "form_element_scores")
-public class FormElementScore {
+@Table(name = "scores")
+public class Score {
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    private BigDecimal score;
+    private BigDecimal points;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

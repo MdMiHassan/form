@@ -25,15 +25,13 @@ public class ImageElementSubmission {
     private UUID id;
 
     @ManyToOne
-    private FormSubmission submission;
+    private FormSubmission formSubmission;
 
-    @ManyToOne
-    private FormElement element;
-
+    @OneToOne
     private StorageEntity storageEntity;
 
     @OneToOne
-    private FormElementScore elementMark;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

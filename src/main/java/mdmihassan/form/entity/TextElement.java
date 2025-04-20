@@ -22,10 +22,10 @@ public class TextElement {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    private long maxLength;
-
     @OneToOne
-    private FormElementScore elementMark;
+    private FormElement formElement;
+
+    private long maxLength;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

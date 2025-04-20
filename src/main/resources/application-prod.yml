@@ -1,8 +1,40 @@
+server:
+  port: 8080
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:3306/form
-    username: root
+    # ─────── DataSource (JDBC) ───────
+    url:
+    username:
     password:
+
+    # ─────── HikariCP pool settings ───────
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 2000
+
   jpa:
+    # ─────── JPA / Hibernate ───────
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+
+form:
+  security:
+    config:
+      secrets:
+        key:
+    api:
+      key:
+        refresh:
+          # refreshKeyTimeout (in milliseconds)
+          timeout: 86_400_000   # e.g. 24h = 86,400,000ms
+        access:
+          # access timeout (in milliseconds)
+          timeout: 3_600_000    # e.g. 1h = 3,600,000ms
+
+      cors:
+        allowed:
+          origins: http://localhost:8080,http://127.0.0.1:8080
+          methods: GET,POST,PUT,DELETE,PATCH

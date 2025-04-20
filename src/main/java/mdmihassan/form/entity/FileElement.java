@@ -15,20 +15,22 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "file_elements")
 public class FileElement {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @ManyToOne
-    private FormSubmission submission;
+    @OneToOne
+    private FormElement formElement;
+
+    private int maxAllowedFile;
+
+    private long maxFileSize;
 
     @OneToOne
-    private StorageEntity storageEntity;
-
-    @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

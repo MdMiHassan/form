@@ -23,12 +23,14 @@ public class FormSubmission {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
+    @ManyToOne
     private Form form;
 
+    @ManyToOne
     private User user;
 
     @OneToOne
-    private FormElementScore elementMark;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

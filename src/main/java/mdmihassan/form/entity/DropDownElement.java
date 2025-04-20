@@ -23,8 +23,8 @@ public class DropDownElement {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @ManyToOne
-    private FormElement element;
+    @OneToOne
+    private FormElement formElement;
 
     private boolean multiSelection;
 
@@ -32,7 +32,7 @@ public class DropDownElement {
     private List<SelectableElementOption> options;
 
     @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

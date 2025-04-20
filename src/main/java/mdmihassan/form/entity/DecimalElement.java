@@ -16,12 +16,15 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "drop_down_elements")
+@Table(name = "decimal_elements")
 public class DecimalElement {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
+
+    @OneToOne
+    private FormElement formElement;
 
     private BigDecimal min;
 

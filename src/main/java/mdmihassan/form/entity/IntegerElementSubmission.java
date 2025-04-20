@@ -1,9 +1,6 @@
 package mdmihassan.form.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -19,14 +16,20 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "drop_down_elements")
+@Table(name = "integer_element_submissions")
 public class IntegerElementSubmission {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
+    @ManyToOne
+    private FormSubmission formSubmission;
+
     private BigInteger integerValue;
+
+    @OneToOne
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -16,21 +16,22 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "multiple_choice_elements")
+@Table(name = "selectable_elements")
 public class SelectableElement {
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @ManyToOne
-    private FormElement form;
+    @OneToOne
+    private FormElement formElement;
 
     private boolean multiSelection;
-    private List<SelectableElementOption> options;
-    private List<SelectableElementOption> correctOptions;
 
-    @OneToOne
-    private FormElementScore elementMark;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<SelectableElementOption> options;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<SelectableElementOption> correctOptions;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

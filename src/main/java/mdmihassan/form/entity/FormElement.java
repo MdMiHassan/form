@@ -15,7 +15,6 @@ import java.util.UUID;
 @Entity
 @Data
 @Builder
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "form_elements")
@@ -30,7 +29,7 @@ public class FormElement {
 
     private String label;
 
-    private int order;
+    private int elementOrder;
 
     private boolean optional;
 
@@ -40,7 +39,7 @@ public class FormElement {
     private UUID elementId;
 
     @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

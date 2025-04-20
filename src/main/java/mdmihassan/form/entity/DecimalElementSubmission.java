@@ -16,17 +16,20 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "drop_down_elements")
+@Table(name = "decimal_element_submissions")
 public class DecimalElementSubmission {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
+    @ManyToOne
+    private FormSubmission formSubmission;
+
     private BigDecimal decimalValue;
 
     @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

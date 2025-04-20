@@ -22,15 +22,13 @@ public class TextElementSubmission {
     private UUID id;
 
     @ManyToOne
-    private FormSubmission submission;
-
-    private FormElement element;
+    private FormSubmission formSubmission;
 
     @Lob
     private String text;
 
     @OneToOne
-    private FormElementScore elementMark;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

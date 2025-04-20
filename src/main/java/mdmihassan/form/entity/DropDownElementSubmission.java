@@ -24,16 +24,13 @@ public class DropDownElementSubmission {
     private UUID id;
 
     @ManyToOne
-    private FormSubmission submission;
-
-    @ManyToOne
-    private FormElement element;
+    private FormSubmission formSubmission;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<SelectableElementOption> selectedOptions;
 
     @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

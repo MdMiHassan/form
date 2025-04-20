@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -22,15 +23,13 @@ public class FileElementSubmission {
     private UUID id;
 
     @ManyToOne
-    private FormSubmission submission;
+    private FormSubmission formSubmission;
 
-    private FormElement element;
-
-    @OneToOne
-    private StorageEntity storageEntity;
+    @OneToMany
+    private List<StorageEntity> storageEntity;
 
     @OneToOne
-    private FormElementScore elementScore;
+    private Score score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -16,17 +16,20 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "element_options")
+@Table(name = "selectable_element_options")
 public class SelectableElementOption {
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
+    @ManyToOne
+    private SelectableElement selectableElement;
+
     @Lob
     private String text;
 
     @Column(nullable = false)
-    private int order;
+    private int optionOrder;
 
     @OneToMany
     private List<StorageEntity> attachments;

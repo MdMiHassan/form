@@ -25,7 +25,7 @@ public class ImageElement {
     private UUID id;
 
     @OneToOne
-    private FormElement element;
+    private FormElement formElement;
 
     private boolean fixedSize;
     private boolean maintainAspectRatio;
@@ -36,9 +36,6 @@ public class ImageElement {
     private int minWidth;
     private int minLength;
     private long maxFileSize;
-
-    @OneToOne
-    private FormElementScore elementMark;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

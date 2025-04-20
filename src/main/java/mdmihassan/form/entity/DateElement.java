@@ -16,16 +16,19 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "drop_down_elements")
+@Table(name = "date_elements")
 public class DateElement {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    private Date from;
+    @OneToOne
+    private FormElement formElement;
 
-    private Date end;
+    private Date fromDate;
+
+    private Date endDate;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

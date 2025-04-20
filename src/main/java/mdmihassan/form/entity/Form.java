@@ -28,7 +28,7 @@ public class Form {
     @ManyToOne
     private User owner;
 
-    private Timestamp deadline;
+    private Timestamp lastSubmissionDate;
 
     private String title;
 
@@ -42,7 +42,7 @@ public class Form {
 
     private boolean allowMultipleSubmission;
 
-    @ManyToMany
+    @OneToMany
     private List<FormElement> formElements;
 
     @CreationTimestamp
