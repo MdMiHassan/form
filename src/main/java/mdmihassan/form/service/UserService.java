@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface UserService extends UserDetailsService {
 
-    User register(UserRegistrationRequest userRegistrationRequest);
+    User registerUser(UserRegistrationRequest userRegistrationRequest);
 
-    Optional<User> get(UUID id);
+    Optional<User> getUser(UUID id);
 
     User getCurrentUser();
 

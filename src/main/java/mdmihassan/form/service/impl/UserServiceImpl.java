@@ -20,12 +20,12 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public User register(UserRegistrationRequest userRegistrationRequest) {
+    public User registerUser(UserRegistrationRequest userRegistrationRequest) {
         return null;
     }
 
     @Override
-    public Optional<User> get(UUID id) {
+    public Optional<User> getUser(UUID id) {
         return userRepository.findById(id);
     }
 

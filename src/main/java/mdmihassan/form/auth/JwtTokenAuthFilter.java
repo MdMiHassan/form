@@ -1,13 +1,11 @@
-package mdmihassan.form.config;
+package mdmihassan.form.auth;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import mdmihassan.form.auth.SecurityContextHelper;
-import mdmihassan.form.auth.TokenService;
-import org.springframework.beans.factory.annotation.Qualifier;
+import mdmihassan.form.service.TokenService;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,9 +16,9 @@ import java.io.IOException;
 @Slf4j
 public class JwtTokenAuthFilter extends OncePerRequestFilter {
 
-    private final TokenService tokenService;
+    private final TokenService<UserAuthenticationToken> tokenService;
 
-    public JwtTokenAuthFilter(@Qualifier("jwtTokenService") TokenService tokenService) {
+    public JwtTokenAuthFilter(TokenService<UserAuthenticationToken> tokenService) {
         this.tokenService = tokenService;
     }
 
@@ -30,7 +28,7 @@ public class JwtTokenAuthFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
-            SecurityContextHelper.setAuthentication(tokenService.verify(token.substring(7)));
+            SecurityContextHelper.setAuthentication(tokenService.parse(token.substring(7)));
         }
         filterChain.doFilter(request, response);
     }

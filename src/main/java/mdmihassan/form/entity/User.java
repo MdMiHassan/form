@@ -12,7 +12,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -85,27 +84,25 @@ public class User implements UserDetails {
         if (accountExpiration == null) {
             return true;
         }
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        return accountExpiration.before(now);
+        return accountExpiration.before(new Timestamp(System.currentTimeMillis()));
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return !this.locked;
+        return !locked;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        if (Objects.isNull(credentialsExpiration)) {
+        if (credentialsExpiration == null) {
             return true;
         }
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        return credentialsExpiration.before(now);
+        return credentialsExpiration.before(new Timestamp(System.currentTimeMillis()));
     }
 
     @Override
     public boolean isEnabled() {
-        return this.enabled;
+        return enabled;
     }
 
     public enum Role {

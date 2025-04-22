@@ -1,4 +1,4 @@
-package mdmihassan.form.auth;
+package mdmihassan.form.service;
 
 import mdmihassan.form.model.AccessTokenRequest;
 import mdmihassan.form.model.AuthenticationResponse;
