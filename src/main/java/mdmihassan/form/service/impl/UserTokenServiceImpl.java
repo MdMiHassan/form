@@ -1,14 +1,15 @@
-package mdmihassan.form.auth;
+package mdmihassan.form.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import mdmihassan.form.auth.UserTokenAuthentication;
+import mdmihassan.form.dto.UserTokenDto;
 import mdmihassan.form.entity.User;
 import mdmihassan.form.entity.UserToken;
 import mdmihassan.form.exception.ResourceNotFoundException;
 import mdmihassan.form.exception.UnauthorizedActionException;
-import mdmihassan.form.model.ApiKey;
 import mdmihassan.form.repository.UserTokenRepository;
 import mdmihassan.form.service.UserService;
-import org.springframework.beans.factory.annotation.Qualifier;
+import mdmihassan.form.service.UserTokenService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
@@ -22,8 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Qualifier("apiTokenService")
-public class ApiAccessTokenServiceImpl implements UserTokenService {
+public class UserTokenServiceImpl implements UserTokenService {
 
     private final UserTokenRepository userTokenRepository;
     private final UserService userService;
@@ -31,49 +31,31 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     private final StringKeyGenerator stringKeyGenerator;
 
     @Override
-    public UserAuthorityToken verify(String token) {
-        UserToken userToken = getUserToken(token);
-        if (userToken.getCredentialsExpiration() != null
-                && userToken.getCredentialsExpiration().after(Timestamp.from(Instant.now()))) {
-            throw new BadCredentialsException("token expired");
-        }
-        User user = userToken.getUser();
-        if (!user.isEnabled()) {
-            throw new BadCredentialsException("user not available");
-        }
-        if (user.isLocked()) {
-            throw new BadCredentialsException("user locked");
-        }
-        if (user.getAccountExpiration() != null
-                && user.getCredentialsExpiration().after(Timestamp.from(Instant.now()))) {
-            throw new BadCredentialsException("user account expired");
-        }
-        return new ApiAccessToken(
-                true,
-                user,
-                userToken.getCreatedAt().toInstant(),
-                userToken.getCredentialsExpiration() == null ? null : userToken.getCredentialsExpiration().toInstant(),
-                userToken.getTokenAuthorities(),
-                userToken.getName());
+    public UserTokenAuthentication parse(String token) {
+        return UserTokenAuthentication.of(getUserToken(token));
     }
 
     @Override
-    public String generate(UserAuthorityToken userAuthorityToken) {
+    public String generate(UserTokenAuthentication apiAccessToken) {
+        return createUserToken(apiAccessToken);
+    }
+
+    private String createUserToken(UserTokenAuthentication userTokenAuthentication) {
         UserToken userToken = new UserToken();
 
-        if (userAuthorityToken instanceof ApiAccessToken token) {
+        if (userTokenAuthentication instanceof UserTokenAuthentication token) {
             userToken.setName(token.getName());
         }
 
-        if (userAuthorityToken.getUser() != null) {
-            userToken.setUser(userAuthorityToken.getUser());
+        if (userTokenAuthentication.getUser() != null) {
+            userToken.setUser(userTokenAuthentication.getUser());
         } else {
             userToken.setUser(userService.getCurrentUser());
         }
 
-        userToken.setTokenAuthorities(userAuthorityToken.getAuthorities());
-        if (userAuthorityToken.getExpiration() != null) {
-            userToken.setCredentialsExpiration(Timestamp.from(userAuthorityToken.getExpiration()));
+        userToken.setTokenAuthorities(userTokenAuthentication.getAuthorities());
+        if (userTokenAuthentication.getExpiration() != null) {
+            userToken.setCredentialsExpiration(Timestamp.from(userTokenAuthentication.getExpiration()));
         }
 
         userToken.setEnabled(true);
@@ -86,26 +68,26 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     }
 
     @Override
-    public ApiKey issueKey(ApiAccessToken apiAccessToken) {
-        String apiSecret = generate(apiAccessToken);
-        ApiKey apiKey = new ApiKey();
-        apiKey.setName(apiAccessToken.getName());
-        apiKey.setSecret(apiSecret);
-        apiKey.setEnabled(true);
-        apiKey.setIssuedAt(apiAccessToken.getIssuedAt());
-        apiKey.setExpiration(apiAccessToken.getExpiration());
-        apiKey.setAuthorities(apiAccessToken.getAuthorities());
-        return apiKey;
+    public UserTokenDto issueUserToken(UserTokenAuthentication userTokenAuthentication) {
+        String apiSecret = createUserToken(userTokenAuthentication);
+        UserTokenDto userTokenDto = new UserTokenDto();
+        userTokenDto.setName(userTokenAuthentication.getName());
+        userTokenDto.setSecret(apiSecret);
+        userTokenDto.setEnabled(true);
+        userTokenDto.setIssuedAt(userTokenAuthentication.getIssuedAt());
+        userTokenDto.setExpiration(userTokenAuthentication.getExpiration());
+        userTokenDto.setAuthorities(userTokenAuthentication.getAuthorities());
+        return userTokenDto;
     }
 
     @Override
-    public List<ApiKey> getAllIssuedKeys() {
+    public List<UserTokenDto> getAllIssuedTokens() {
         List<UserToken> userTokens = userTokenRepository.findAllByUser(userService.getCurrentUser());
         if (userTokens.isEmpty()) {
             throw new ResourceNotFoundException("No issued api key found");
         }
         return userTokens.stream()
-                .map(userToken -> ApiKey.builder()
+                .map(userToken -> UserTokenDto.builder()
                         .name(userToken.getName())
                         .issuedAt(userToken.getCreatedAt().toInstant())
                         .enabled(userToken.isEnabled())
@@ -116,8 +98,8 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     }
 
     @Override
-    public void setExpiration(UUID id, Instant expiration) {
-        UserToken userToken = userTokenRepository.findById(id)
+    public void setExpiration(UUID tokenId, Instant expiration) {
+        UserToken userToken = userTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("api key not exists"));
         User currentUser = userService.getCurrentUser();
         if (!currentUser.getId().equals(userToken.getUser().getId())) {
@@ -133,8 +115,8 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     }
 
     @Override
-    public void invalidate(UUID id) {
-        UserToken userToken = userTokenRepository.findById(id)
+    public void invalidate(UUID tokenId) {
+        UserToken userToken = userTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("api key not exists"));
         User currentUser = userService.getCurrentUser();
         if (!currentUser.getId().equals(userToken.getUser().getId())) {
@@ -146,27 +128,24 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
 
     @Override
     public void invalidateAll() {
-        List<UserToken> userTokens = userTokenRepository.findAllByUser(userService.getCurrentUser())
-                .stream()
-                .filter(UserToken::isValidToken)
-                .peek(UserToken::disable)
-                .toList();
-        userTokenRepository.saveAll(userTokens);
+        disableAllToken(userTokenRepository.findAllByUser(userService.getCurrentUser()));
     }
 
     @Override
     public void invalidateAllByToken(List<UUID> tokenIds) {
-        List<UserToken> userTokens = userTokenRepository.findAllByUserIdAndIdIn(userService.getCurrentUser(), tokenIds)
-                .stream()
-                .filter(UserToken::isValidToken)
+        disableAllToken(userTokenRepository.findAllByUserIdAndIdIn(userService.getCurrentUser(), tokenIds));
+    }
+
+    private void disableAllToken(List<UserToken> userTokens) {
+        userTokenRepository.saveAll(userTokens.stream()
+                .filter(UserToken::isEnabled)
                 .peek(UserToken::disable)
-                .toList();
-        userTokenRepository.saveAll(userTokens);
+                .toList());
     }
 
     @Override
-    public void delete(UUID id) {
-        UserToken userToken = userTokenRepository.findById(id)
+    public void delete(UUID tokenId) {
+        UserToken userToken = userTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("api key not exists"));
         if (!userService.getCurrentUser().getId().equals(userToken.getUser().getId())) {
             throw new UnauthorizedActionException("You don't have necessary permission to delete this token");
@@ -180,13 +159,13 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     }
 
     @Override
-    public void deleteAllByToken(List<UUID> tokenIds) {
+    public void deleteAllByTokenId(List<UUID> tokenIds) {
         userTokenRepository.deleteAllByUserAndIdIn(userService.getCurrentUser(), tokenIds);
     }
 
     @Override
-    public void setAuthorities(UUID id, List<GrantedAuthority> authorities) {
-        UserToken userToken = userTokenRepository.findById(id)
+    public void setAuthorities(UUID tokenId, List<GrantedAuthority> authorities) {
+        UserToken userToken = userTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("api key not exists"));
         if (!userService.getCurrentUser().getId().equals(userToken.getUser().getId())) {
             throw new UnauthorizedActionException("You don't have necessary permission to set authorities");
@@ -196,8 +175,8 @@ public class ApiAccessTokenServiceImpl implements UserTokenService {
     }
 
     @Override
-    public void addAuthorities(UUID id, List<GrantedAuthority> authorities) {
-        UserToken userToken = userTokenRepository.findById(id)
+    public void addAuthorities(UUID tokenId, List<GrantedAuthority> authorities) {
+        UserToken userToken = userTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("api key not exists"));
         if (!userService.getCurrentUser().getId().equals(userToken.getUser().getId())) {
             throw new UnauthorizedActionException("You don't have necessary permission to add new authorities");

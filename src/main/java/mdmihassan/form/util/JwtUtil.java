@@ -51,8 +51,8 @@ public class JwtUtil {
                 .add(claims)
                 .and()
                 .subject(subject)
-                .issuedAt(Date.from(issuedAt))
-                .expiration(Date.from(expiration))
+                .issuedAt(TimeAndDates.toDate(issuedAt))
+                .expiration(TimeAndDates.toDate(expiration))
                 .signWith(secretKey)
                 .compact();
     }

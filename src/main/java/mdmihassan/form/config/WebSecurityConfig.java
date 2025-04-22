@@ -1,6 +1,8 @@
 package mdmihassan.form.config;
 
 import lombok.RequiredArgsConstructor;
+import mdmihassan.form.auth.ApiAccessTokenAuthFilter;
+import mdmihassan.form.auth.JwtTokenAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,9 +22,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    private final AuthenticationProvider authenticationProvider;
     private final JwtTokenAuthFilter jwtTokenAuthFilter;
-    private final ApikeyAuthFilter apikeyAuthFilter;
+    private final ApiAccessTokenAuthFilter apiAccessTokenAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
@@ -45,8 +47,8 @@ public class WebSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(apikeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtTokenAuthFilter, ApikeyAuthFilter.class)
+                .addFilterBefore(apiAccessTokenAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtTokenAuthFilter, ApiAccessTokenAuthFilter.class)
                 .build();
     }
 

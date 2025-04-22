@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
+
     Optional<UserToken> findByTokenHash(String tokenHash);
 
     List<UserToken> findAllByUserId(UUID id);
@@ -20,4 +21,5 @@ public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
     void deleteAllByUser(User user);
 
     void deleteAllByUserAndIdIn(User user, List<UUID> tokenIds);
+
 }
