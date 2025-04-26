@@ -21,10 +21,12 @@ public class CorsConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> allowedOrigins = defaultAllowedOrigins.stream().map(URL::toString).toList();
+        List<String> allowedMethods = defaultAllowedMethods.stream().map(RequestMethod::name).toList();
         return request -> {
             CorsConfiguration corsConfiguration = new CorsConfiguration();
-            corsConfiguration.setAllowedOrigins(defaultAllowedOrigins.stream().map(URL::toString).toList());
-            corsConfiguration.setAllowedMethods(defaultAllowedMethods.stream().map(RequestMethod::name).toList());
+            corsConfiguration.setAllowedOrigins(allowedOrigins);
+            corsConfiguration.setAllowedMethods(allowedMethods);
             return corsConfiguration.applyPermitDefaultValues();
         };
     }
