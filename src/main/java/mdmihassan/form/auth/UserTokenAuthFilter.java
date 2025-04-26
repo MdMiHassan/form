@@ -14,11 +14,11 @@ import java.io.IOException;
 
 @Component
 @Slf4j
-public class ApiAccessTokenAuthFilter extends OncePerRequestFilter {
+public class UserTokenAuthFilter extends OncePerRequestFilter {
 
     private final TokenService<UserTokenAuthentication> tokenService;
 
-    public ApiAccessTokenAuthFilter(TokenService<UserTokenAuthentication> tokenService) {
+    public UserTokenAuthFilter(TokenService<UserTokenAuthentication> tokenService) {
         this.tokenService = tokenService;
     }
 

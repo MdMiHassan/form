@@ -16,10 +16,12 @@ public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
 
     List<UserToken> findAllByUser(User user);
 
-    List<UserToken> findAllByUserIdAndIdIn(User currentUser, List<UUID> tokenIds);
+    List<UserToken> findAllByIdInAndUser(List<UUID> tokenIds, User currentUser);
 
     void deleteAllByUser(User user);
 
-    void deleteAllByUserAndIdIn(User user, List<UUID> tokenIds);
+    UserToken findByIdAndUser(UUID tokenId, User user);
+
+    void deleteAllByIdInAndUser(List<UUID> tokenIds, User user);
 
 }

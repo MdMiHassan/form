@@ -13,6 +13,6 @@ public interface UserService extends UserDetailsService {
 
     Optional<User> getUser(UUID id);
 
-    User getCurrentUser();
+    Optional<User> getAuthenticatedUser();
 
 }

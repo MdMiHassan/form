@@ -67,7 +67,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private String issueRefreshToken(User user) {
         Instant issuedAt = Instant.now();
-        return tokenService.generate(new UserAuthenticationToken(user, issuedAt, issuedAt.plusMillis(accessKeyTimeout)) {
+        return tokenService.generate(new UserAuthenticationToken(user, issuedAt, issuedAt.plusMillis(refreshKeyTimeout)) {
             @Override
             public List<GrantedAuthority> getAuthorities() {
                 return Collections.emptyList();

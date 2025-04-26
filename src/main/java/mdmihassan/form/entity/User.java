@@ -10,9 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -32,16 +30,17 @@ public class User implements UserDetails {
 
     private String lastName;
 
-    private String userName;
+    @Column(nullable = false, unique = true)
+    private String username;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Role> roles;
+    private Set<Role> roles;
 
     private boolean locked;
 
@@ -62,6 +61,9 @@ public class User implements UserDetails {
 
     @Override
     public List<GrantedAuthority> getAuthorities() {
+        if (roles == null) {
+            return Collections.emptyList();
+        }
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (Role role : roles) {
             authorities.add(new SimpleGrantedAuthority(role.toString()));
@@ -76,7 +78,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return userName;
+        return username;
     }
 
     @Override
@@ -103,6 +105,24 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean hasRole(Role role) {
+        return roles != null && roles.contains(role);
+    }
+
+    public void addRoles(List<Role> roles) {
+        if (roles == null) {
+            return;
+        }
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        for (Role role : roles) {
+            if (role != null) {
+                this.roles.add(role);
+            }
+        }
     }
 
     public enum Role {

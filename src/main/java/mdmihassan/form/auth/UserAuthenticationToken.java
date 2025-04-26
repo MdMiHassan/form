@@ -12,19 +12,20 @@ import java.util.Objects;
 public class UserAuthenticationToken extends ExpirableAuthenticationToken {
 
     private final User user;
-    private Instant issuedAt;
-    private Instant expiration;
 
     public UserAuthenticationToken(User user) {
-        super(user.getAuthorities());
-        this.user = Objects.requireNonNull(user, "user must not be null");
+        super(Objects.requireNonNull(user, "user must not be null").getAuthorities());
+        this.user = user;
+    }
+
+    public UserAuthenticationToken(User user, Instant expiration) {
+        super(Objects.requireNonNull(user, "user must not be null").getAuthorities(), expiration);
+        this.user = user;
     }
 
     public UserAuthenticationToken(User user, Instant issuedAt, Instant expiration) {
-        super(user.getAuthorities());
-        this.user = Objects.requireNonNull(user, "user must not be null");
-        this.issuedAt = issuedAt;
-        this.expiration = expiration;
+        super(Objects.requireNonNull(user, "user must not be null").getAuthorities(), issuedAt, expiration);
+        this.user = user;
     }
 
     public static UserAuthenticationToken of(User user, Date issuedAt, Date expiration) {
@@ -41,21 +42,6 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
     }
 
     @Override
-    public Instant getIssuedAt() {
-        return issuedAt;
-    }
-
-    @Override
-    public Instant getExpiration() {
-        return expiration;
-    }
-
-    @Override
-    public boolean isExpired() {
-        return !nonExpired();
-    }
-
-    @Override
     public List<GrantedAuthority> getAuthorities() {
         return user.getAuthorities();
     }
@@ -67,7 +53,7 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
 
     @Override
     public Object getPrincipal() {
-        return user;
+        return getUser();
     }
 
     @Override
@@ -79,11 +65,41 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
                 && user.isAccountNonExpired();
     }
 
-    private boolean nonExpired() {
-        if (expiration == null) {
-            return true;
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof UserTokenAuthentication test)) {
+            return false;
         }
-        return expiration.isBefore(Instant.now());
+        if (!this.getAuthorities().equals(test.getAuthorities())) {
+            return false;
+        }
+        if ((super.getDetails() == null) && (test.getDetails() != null)) {
+            return false;
+        }
+        if ((super.getDetails() != null) && (test.getDetails() == null)) {
+            return false;
+        }
+        if ((super.getDetails() != null) && (!super.getDetails().equals(test.getDetails()))) {
+            return false;
+        }
+        if ((this.getCredentials() == null) && (test.getCredentials() != null)) {
+            return false;
+        }
+        if ((this.getCredentials() != null) && !this.getCredentials().equals(test.getCredentials())) {
+            return false;
+        }
+        if (this.getPrincipal() == null && test.getPrincipal() != null) {
+            return false;
+        }
+        if (this.getPrincipal() != null && !this.getPrincipal().equals(test.getPrincipal())) {
+            return false;
+        }
+        return this.isAuthenticated() == test.isAuthenticated();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
 }

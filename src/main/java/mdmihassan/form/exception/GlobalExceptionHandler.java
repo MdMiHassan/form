@@ -1,31 +1,38 @@
 package mdmihassan.form.exception;
 
-import mdmihassan.form.model.ApiError;
-import mdmihassan.form.model.ApiResponse;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import lombok.extern.slf4j.Slf4j;
+import mdmihassan.form.model.APIResponse.ErrorResponse;
+import mdmihassan.form.model.APIResponse;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.List;
+
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        ApiError apiError = new ApiError();
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
-        apiError.setType(ApiError.ErrorType.VALIDATION_ERROR);
-        apiError.setMessage("Request validation failed");
-        apiError.setDetails(getBindingErrorDetails(ex.getBindingResult()));
+    public ResponseEntity<APIResponse<Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(ErrorResponse.ErrorCode.REQUEST_VALIDATION_FAILED);
+        errorResponse.setMessage("Request validation failed");
+        errorResponse.setDetails(getBindingErrorDetails(ex.getBindingResult()));
         return ResponseEntity.badRequest()
-                .body(ApiResponse.badRequest(apiError));
+                .body(APIResponse.badRequest(errorResponse));
     }
 
-    private Object getBindingErrorDetails(BindingResult bindingResult) {
+    private List<String> getBindingErrorDetails(BindingResult bindingResult) {
         return bindingResult.getAllErrors()
                 .stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
@@ -33,108 +40,120 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException e) {
-        ApiError apiError = new ApiError();
-        apiError.setType(ApiError.ErrorType.NOT_FOUND_ERROR);
-        apiError.setCode(ApiError.ErrorCode.RESOURCE_NOT_FOUND);
-        apiError.setMessage(e.getMessage());
+    public ResponseEntity<APIResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(ErrorResponse.ErrorCode.NOT_FOUND);
+        errorResponse.setMessage(e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.notFound(apiError));
+                .body(APIResponse.notFound(errorResponse));
     }
 
     @ExceptionHandler(InvalidActionException.class)
-    public ResponseEntity<ApiResponse<Object>> handleInvalidActionException(InvalidActionException e) {
-        ApiError apiError = new ApiError();
-        apiError.setType(ApiError.ErrorType.UNSUPPORTED_OPERATION);
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
-        apiError.setMessage(e.getMessage());
+    public ResponseEntity<APIResponse<Object>> handleInvalidActionException(InvalidActionException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(ErrorResponse.ErrorCode.UNSUPPORTED_OPERATION);
+        errorResponse.setMessage(e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.notFound(apiError));
+                .body(APIResponse.notFound(errorResponse));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBadCredentialsException(BadCredentialsException e) {
-        ApiError.GenericDetails details = new ApiError.GenericDetails();
+    public ResponseEntity<APIResponse<Object>> handleBadCredentialsException(BadCredentialsException e) {
+        ErrorResponse.GenericDetails details = new ErrorResponse.GenericDetails();
         details.setMessage(e.getMessage());
 
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setCode(ApiError.ErrorCode.INVALID_CREDENTIALS);
-        apiError.setType(ApiError.ErrorType.AUTHENTICATION_ERROR);
-        apiError.setDetails(details);
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(e.getMessage());
+        errorResponse.setCode(ErrorResponse.ErrorCode.AUTHENTICATION_FAILED);
+        errorResponse.setDetails(details);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.notFound(apiError));
+                .body(APIResponse.badRequest(errorResponse));
     }
 
     @ExceptionHandler(UnauthorizedActionException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUnauthorizedActionException(UnauthorizedActionException e) {
+    public ResponseEntity<APIResponse<Object>> handleUnauthorizedActionException(UnauthorizedActionException e) {
         return getAuthorizationErrorResponse(e.getMessage());
     }
 
-    private ResponseEntity<ApiResponse<Object>> getAuthorizationErrorResponse(String message) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(message);
-        apiError.setType(ApiError.ErrorType.AUTHORIZATION_ERROR);
-        apiError.setCode(ApiError.ErrorCode.INVALID_CREDENTIALS);
+    private ResponseEntity<APIResponse<Object>> getAuthorizationErrorResponse(String message) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(message);
+        errorResponse.setCode(ErrorResponse.ErrorCode.AUTHORIZATION_FAILED);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.unauthorized(apiError));
+                .body(APIResponse.unauthorized(errorResponse));
     }
 
     @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUnauthorizedAccessException(UnauthorizedAccessException e) {
+    public ResponseEntity<APIResponse<Object>> handleUnauthorizedAccessException(UnauthorizedAccessException e) {
         return getAuthorizationErrorResponse(e.getMessage());
     }
 
 
     @ExceptionHandler(ResourceCreationFailedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleResourceCreationFailedException(ResourceCreationFailedException e) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setType(ApiError.ErrorType.BUSINESS_ERROR);
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
+    public ResponseEntity<APIResponse<Object>> handleResourceCreationFailedException(ResourceCreationFailedException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(e.getMessage());
+        errorResponse.setCode(ErrorResponse.ErrorCode.BUSINESS_ERROR);
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-                .body(ApiResponse.badRequest(apiError));
+                .body(APIResponse.badRequest(errorResponse));
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ApiResponse<Object>> handleDuplicateResourceException(DuplicateResourceException e) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setType(ApiError.ErrorType.BUSINESS_ERROR);
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
+    public ResponseEntity<APIResponse<Object>> handleDuplicateResourceException(DuplicateResourceException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(e.getMessage());
+        errorResponse.setCode(ErrorResponse.ErrorCode.BUSINESS_ERROR);
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.badRequest(apiError));
+                .body(APIResponse.badRequest(errorResponse));
     }
 
     @ExceptionHandler(ResourceUpdateFailedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleResourceUpdateFailedException(ResourceUpdateFailedException e) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setType(ApiError.ErrorType.BUSINESS_ERROR);
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
+    public ResponseEntity<APIResponse<Object>> handleResourceUpdateFailedException(ResourceUpdateFailedException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(e.getMessage());
+        errorResponse.setCode(ErrorResponse.ErrorCode.BUSINESS_ERROR);
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE.value())
-                .body(ApiResponse.badRequest(apiError));
+                .body(APIResponse.badRequest(errorResponse));
     }
 
     @ExceptionHandler(ResourceDeleteFailedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleResourceDeleteFailedException(ResourceDeleteFailedException e) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setType(ApiError.ErrorType.BUSINESS_ERROR);
-        apiError.setCode(ApiError.ErrorCode.INVALID_INPUT);
+    public ResponseEntity<APIResponse<Object>> handleResourceDeleteFailedException(ResourceDeleteFailedException e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(e.getMessage());
+        errorResponse.setCode(ErrorResponse.ErrorCode.BUSINESS_ERROR);
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE.value())
-                .body(ApiResponse.badRequest(apiError));
+                .body(APIResponse.badRequest(errorResponse));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<APIResponse<Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        Throwable rootCause = ex.getMostSpecificCause();
+        String message = switch (rootCause) {
+            case InvalidFormatException ife ->
+                    String.format("Invalid format for field '%s'. Expected type: %s", ife.getPathReference(), ife.getTargetType().getSimpleName());
+            case UnrecognizedPropertyException upe -> String.format("Unknown field: '%s'", upe.getPropertyName());
+            case MismatchedInputException mie ->
+                    String.format("Type mismatch at '%s': %s", mie.getPathReference(), mie.getOriginalMessage());
+            default -> "Malformed request";
+        };
+
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(message);
+        errorResponse.setCode(ErrorResponse.ErrorCode.INVALID_INPUT);
+
+        return ResponseEntity
+                .badRequest()
+                .body(APIResponse.badRequest(errorResponse));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleException(Exception e) {
-        ApiError apiError = new ApiError();
-        apiError.setMessage(e.getMessage());
-        apiError.setCode(ApiError.ErrorCode.INTERNAL_SERVER_ERROR);
-        apiError.setType(ApiError.ErrorType.INTERNAL_ERROR);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.internalServerError(apiError));
+    public ResponseEntity<APIResponse<Object>> handleException(Exception e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage("An unexpected error occurred");
+        errorResponse.setCode(ErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(APIResponse.internalServerError(errorResponse));
     }
 
 }

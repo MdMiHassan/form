@@ -1,7 +1,7 @@
 package mdmihassan.form.config;
 
 import lombok.RequiredArgsConstructor;
-import mdmihassan.form.auth.ApiAccessTokenAuthFilter;
+import mdmihassan.form.auth.UserTokenAuthFilter;
 import mdmihassan.form.auth.JwtTokenAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +23,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class WebSecurityConfig {
 
     private final JwtTokenAuthFilter jwtTokenAuthFilter;
-    private final ApiAccessTokenAuthFilter apiAccessTokenAuthFilter;
+    private final UserTokenAuthFilter userTokenAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final CorsConfigurationSource corsConfigurationSource;
 
@@ -36,7 +36,8 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST,
-                                "/api/v1/auth/login",
+                                "/api/v1/auth/users/login",
+                                "/api/v1/users/register",
                                 "/api/v1/auth/api/access/tokens"
                         )
                         .permitAll()
@@ -47,8 +48,8 @@ public class WebSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(apiAccessTokenAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtTokenAuthFilter, ApiAccessTokenAuthFilter.class)
+                .addFilterBefore(userTokenAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtTokenAuthFilter, UserTokenAuthFilter.class)
                 .build();
     }
 
