@@ -17,9 +17,9 @@ import java.time.Instant;
 public class APIResponse<T> {
 
     private boolean success;
-    private Instant timestamp;
     private int status;
     private String message;
+    private Instant timestamp;
     private T data;
     private ErrorResponse error;
 
@@ -32,7 +32,7 @@ public class APIResponse<T> {
     }
 
     private static <R> APIResponse<R> newOk(R response, String message) {
-        return createApiResponse(true, HttpStatus.OK.value(), response, message, null);
+        return createAPIResponse(true, HttpStatus.OK.value(), response, message, null);
     }
 
     public static APIResponse<Object> badRequest(ErrorResponse errorResponse) {
@@ -44,35 +44,83 @@ public class APIResponse<T> {
     }
 
     private static APIResponse<Object> newBadRequest(ErrorResponse errorResponse, String message) {
-        return createApiResponse(false, HttpStatus.BAD_REQUEST.value(), null, message, errorResponse);
+        return createAPIResponse(false, HttpStatus.BAD_REQUEST.value(), null, message, errorResponse);
     }
 
     public static APIResponse<Object> unauthorized(ErrorResponse errorResponse) {
-        return createApiResponse(false, HttpStatus.UNAUTHORIZED.value(), null,
-                Messages.UNAUTHORIZED.toString(), errorResponse);
+        return newUnauthorized(errorResponse, Messages.UNAUTHORIZED.toString());
+    }
+
+    public static APIResponse<Object> unauthorized(ErrorResponse errorResponse, String message) {
+        return newUnauthorized(errorResponse, message);
+    }
+
+    private static APIResponse<Object> newUnauthorized(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.UNAUTHORIZED.value(), null, message, errorResponse);
     }
 
     public static APIResponse<Object> forbidden(ErrorResponse errorResponse) {
-        return createApiResponse(false, HttpStatus.FORBIDDEN.value(), null,
-                Messages.FORBIDDEN.toString(), errorResponse);
+        return newForbidden(errorResponse, Messages.FORBIDDEN.toString());
+    }
+
+    public static APIResponse<Object> forbidden(ErrorResponse errorResponse, String message) {
+        return newForbidden(errorResponse, message);
+    }
+
+    public static APIResponse<Object> newForbidden(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.FORBIDDEN.value(), null, message, errorResponse);
     }
 
     public static APIResponse<Object> notFound(ErrorResponse errorResponse) {
-        return createApiResponse(false, HttpStatus.NOT_FOUND.value(), null,
-                Messages.NOT_FOUND.toString(), errorResponse);
+        return newNotFound(errorResponse, Messages.NOT_FOUND.toString());
+    }
+
+    public static APIResponse<Object> notFound(ErrorResponse errorResponse, String message) {
+        return newNotFound(errorResponse, message);
+    }
+
+    public static APIResponse<Object> newNotFound(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.NOT_FOUND.value(), null, message, errorResponse);
     }
 
     public static APIResponse<Object> conflict(ErrorResponse errorResponse) {
-        return createApiResponse(false, HttpStatus.CONFLICT.value(), null,
-                Messages.CONFLICT.toString(), errorResponse);
+        return newConflict(errorResponse, Messages.CONFLICT.toString());
     }
+
+    public static APIResponse<Object> conflict(ErrorResponse errorResponse, String message) {
+        return newConflict(errorResponse, message);
+    }
+
+    public static APIResponse<Object> newConflict(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.CONFLICT.value(), null, message, errorResponse);
+    }
+
 
     public static APIResponse<Object> internalServerError(ErrorResponse errorResponse) {
-        return createApiResponse(false, HttpStatus.INTERNAL_SERVER_ERROR.value(), null,
-                Messages.INTERNAL_SERVER_ERROR.toString(), errorResponse);
+        return newInternalServerError(errorResponse, Messages.INTERNAL_SERVER_ERROR.toString());
     }
 
-    private static <R> APIResponse<R> createApiResponse(boolean success,
+    public static APIResponse<Object> internalServerError(ErrorResponse errorResponse, String message) {
+        return newInternalServerError(errorResponse, message);
+    }
+
+    public static APIResponse<Object> newInternalServerError(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.INTERNAL_SERVER_ERROR.value(), null, message, errorResponse);
+    }
+
+    public static APIResponse<Object> notAcceptable(ErrorResponse errorResponse) {
+        return newNotAcceptable(errorResponse, Messages.NOT_ACCEPTABLE.toString());
+    }
+
+    public static APIResponse<Object> notAcceptable(ErrorResponse errorResponse, String message) {
+        return newNotAcceptable(errorResponse, message);
+    }
+
+    public static APIResponse<Object> newNotAcceptable(ErrorResponse errorResponse, String message) {
+        return createAPIResponse(false, HttpStatus.NOT_ACCEPTABLE.value(), null, message, errorResponse);
+    }
+
+    private static <R> APIResponse<R> createAPIResponse(boolean success,
                                                         int code,
                                                         R response,
                                                         String message,
@@ -87,36 +135,41 @@ public class APIResponse<T> {
         return apiResponse;
     }
 
+    public static APIResponse<?> ok(String message) {
+        return newOk(null, message);
+    }
+
     public enum Messages {
 
-        REQUEST_PROCESSED("Request processed successfully"),
-        DATA_RETRIEVED("Data retrieved successfully"),
+        BAD_REQUEST("Bad request"),
+        UNAUTHORIZED("Unauthorized access"),
+        FORBIDDEN("Access is forbidden"),
+        NOT_FOUND("The requested resource could not be found"),
+        CONFLICT("Conflict detected"),
+        NOT_ACCEPTABLE("Not acceptable"),
+        INTERNAL_SERVER_ERROR("An internal server error occurred. Please try again later"),
+        SERVICE_UNAVAILABLE("The service is currently unavailable. Please try again later"),
+        ACCESS_DENIED("Access denied due to insufficient rights"),
+        UNSUPPORTED_MEDIA_TYPE("Unsupported media type"),
+        TOO_MANY_REQUESTS("Rate limit exceeded"),
+        DEPENDENCY_FAILURE("An external dependency failed. Please retry later"),
+        INVALID_CREDENTIALS("Invalid credentials provided"),
+        INSUFFICIENT_BALANCE("Insufficient balance for this operation"),
+        REQUEST_PROCESSED("The request was processed successfully"),
+        DATA_RETRIEVED("Data has been retrieved successfully"),
         RESOURCE_CREATED("Resource created successfully"),
         RESOURCE_UPDATED("Resource updated successfully"),
         RESOURCE_DELETED("Resource deleted successfully"),
         OPERATION_COMPLETED("Operation completed successfully"),
-        REQUEST_ACCEPTED("Request accepted for processing"),
-        AUTH_SUCCESS("Authentication successful"),
-        INVALID_REQUEST("Invalid request"),
-        BAD_REQUEST("Bad request"),
-        UNAUTHORIZED("Unauthorized access"),
-        FORBIDDEN("Access denied"),
-        NOT_FOUND("Resource not found"),
-        CONFLICT("Conflict occurred"),
-        INTERNAL_SERVER_ERROR("We are facing some problems now, we are working hard to get it fixed!"),
-        INVALID_INPUT("Invalid input provided"),
+        REQUEST_ACCEPTED("Request accepted and is being processed"),
+        AUTH_SUCCESS("Authentication succeeded"),
+        INVALID_REQUEST("The request is invalid"),
+        INVALID_INPUT("Provided input is invalid"),
         MISSING_FIELD("A required field is missing"),
-        INVALID_CREDENTIALS("Invalid username or password"),
-        TOKEN_EXPIRED("Authentication token has expired"),
-        ACCESS_DENIED("Access is denied"),
+        TOKEN_EXPIRED("Your session token has expired"),
         RESOURCE_NOT_FOUND("Requested resource was not found"),
         DUPLICATE_RESOURCE("Resource already exists"),
-        INSUFFICIENT_BALANCE("Insufficient balance to complete operation"),
-        SERVICE_UNAVAILABLE("Dependent service is unavailable"),
-        TOO_MANY_REQUESTS("Rate limit exceeded"),
-        UNSUPPORTED_MEDIA_TYPE("Unsupported media type"),
-        INVALID_STATE("Operation not allowed in the current state"),
-        DEPENDENCY_FAILURE("A required external dependency failed");
+        INVALID_STATE("Operation not allowed in the current state");
 
         private final String message;
 
@@ -142,7 +195,7 @@ public class APIResponse<T> {
         private Object details;
 
         public enum ErrorCode {
-            REQUEST_VALIDATION_FAILED,
+            VALIDATION_FAILED,
             AUTHENTICATION_FAILED,
             AUTHORIZATION_FAILED,
             BUSINESS_ERROR,

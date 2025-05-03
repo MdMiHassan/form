@@ -16,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,7 +23,7 @@ import java.util.List;
 @Slf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    private final TokenService<UserAuthenticationToken> tokenService;
+    private final TokenService<UserAuthenticationToken> userAuthenticationTokenService;
     private final AuthenticationManager authenticationManager;
 
     @Value("${form.security.api.key.refresh.timeout}")
@@ -33,9 +32,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${form.security.api.key.access.timeout}")
     private long accessKeyTimeout;
 
-    public AuthenticationServiceImpl(TokenService<UserAuthenticationToken> tokenService,
+    public AuthenticationServiceImpl(TokenService<UserAuthenticationToken> userAuthenticationTokenService,
                                      AuthenticationManager authenticationManager) {
-        this.tokenService = tokenService;
+        this.userAuthenticationTokenService = userAuthenticationTokenService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -52,22 +51,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponse getAccessToken(AccessTokenRequest accessTokenRequest) {
-        UserAuthenticationToken userAuthenticationToken = tokenService.parse(accessTokenRequest.getRefreshToken());
+        UserAuthenticationToken userAuthenticationToken = userAuthenticationTokenService.parse(accessTokenRequest.getRefreshToken());
         if (!userAuthenticationToken.isAuthenticated()) {
             throw new BadCredentialsException("Invalid refresh token");
         }
         return AuthenticationResponse.of(accessTokenRequest.getRefreshToken(),
-                issueAccessToken(userAuthenticationToken.getUser()));
+                issueAccessToken((User) userAuthenticationToken.getPrincipal()));
     }
 
     private String issueAccessToken(User user) {
-        Instant issuedAt = Instant.now();
-        return tokenService.generate(new UserAuthenticationToken(user, issuedAt, issuedAt.plusMillis(accessKeyTimeout)));
+        return userAuthenticationTokenService.generate(new UserAuthenticationToken(user, accessKeyTimeout));
     }
 
     private String issueRefreshToken(User user) {
-        Instant issuedAt = Instant.now();
-        return tokenService.generate(new UserAuthenticationToken(user, issuedAt, issuedAt.plusMillis(refreshKeyTimeout)) {
+        return userAuthenticationTokenService.generate(new UserAuthenticationToken(user, refreshKeyTimeout) {
             @Override
             public List<GrantedAuthority> getAuthorities() {
                 return Collections.emptyList();

@@ -1,6 +1,5 @@
 package mdmihassan.form.model;
 
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +10,10 @@ import mdmihassan.form.dto.UserDto;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRegistrationRequest {
+public class UserRegistrationResponseModel {
 
-    private String authCode;
+    private boolean verified;
 
-    @Valid
     private UserDto user;
 
 }

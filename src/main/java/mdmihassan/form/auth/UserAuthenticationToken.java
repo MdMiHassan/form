@@ -23,6 +23,11 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
         this.user = user;
     }
 
+    public UserAuthenticationToken(User user, long timeout) {
+        super(Objects.requireNonNull(user, "user must not be null").getAuthorities(), timeout);
+        this.user = user;
+    }
+
     public UserAuthenticationToken(User user, Instant issuedAt, Instant expiration) {
         super(Objects.requireNonNull(user, "user must not be null").getAuthorities(), issuedAt, expiration);
         this.user = user;
@@ -37,10 +42,6 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
         return user.getUsername();
     }
 
-    public User getUser() {
-        return user;
-    }
-
     @Override
     public List<GrantedAuthority> getAuthorities() {
         return user.getAuthorities();
@@ -53,7 +54,7 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
 
     @Override
     public Object getPrincipal() {
-        return getUser();
+        return user;
     }
 
     @Override
@@ -67,7 +68,7 @@ public class UserAuthenticationToken extends ExpirableAuthenticationToken {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof UserTokenAuthentication test)) {
+        if (!(obj instanceof UserTokenAuthenticationToken test)) {
             return false;
         }
         if (!this.getAuthorities().equals(test.getAuthorities())) {

@@ -1,15 +1,22 @@
 package mdmihassan.form.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import mdmihassan.form.auth.UserTokenAuthentication;
+import mdmihassan.form.auth.UserTokenAuthenticationToken;
 import mdmihassan.form.dto.UserTokenDto;
+import mdmihassan.form.entity.User;
 import mdmihassan.form.entity.UserToken;
+import mdmihassan.form.exception.DuplicateResourceException;
 import mdmihassan.form.exception.ResourceNotFoundException;
+import mdmihassan.form.exception.UnauthorizedAccessException;
 import mdmihassan.form.exception.UnauthorizedActionException;
+import mdmihassan.form.model.UserTokenUpdateRequestModel;
 import mdmihassan.form.repository.UserTokenRepository;
-import mdmihassan.form.service.UserService;
+import mdmihassan.form.service.AuthenticatedUserService;
 import mdmihassan.form.service.UserTokenService;
+import mdmihassan.form.util.Preconditions;
 import mdmihassan.form.util.TimeAndDates;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
@@ -18,165 +25,258 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class UserTokenServiceImpl implements UserTokenService {
 
     private final UserTokenRepository userTokenRepository;
-    private final UserService userService;
+    private final AuthenticatedUserService authenticatedUserService;
     private final PasswordEncoder passwordEncoder;
     private final StringKeyGenerator stringKeyGenerator;
 
     @Override
-    public UserTokenAuthentication parse(String token) {
-        return UserTokenAuthentication.of(getUserTokenByEncodedHash(token));
+    public UserTokenAuthenticationToken parse(String token) {
+        return UserTokenAuthenticationToken.of(getUserTokenByEncodedHash(token));
     }
 
     @Override
-    public String generate(UserTokenAuthentication apiAccessToken) {
-        return createUserToken(apiAccessToken);
+    @Transactional
+    public String generate(UserTokenAuthenticationToken userTokenAuthenticationToken) {
+        return issueUserToken(userTokenAuthenticationToken).getSecret();
     }
 
-    private String createUserToken(UserTokenAuthentication userTokenAuthentication) {
+    private UserTokenDto issueUserToken(UserTokenAuthenticationToken userTokenAuthenticationToken) {
+        User user;
+        if (userTokenAuthenticationToken.getPrincipal() instanceof User tokenUser) {
+            user = tokenUser;
+        } else {
+            user = authenticatedUserService.loadAuthenticatedUser()
+                    .orElseThrow(() -> new UnauthorizedActionException("User is required to create UserToken"));
+        }
+
+        if (userTokenRepository.existsByNameAndUser(userTokenAuthenticationToken.getName(), user)) {
+            throw new DuplicateResourceException(
+                    "token with then name '" + userTokenAuthenticationToken.getName() + "' already exists");
+        }
+
         UserToken userToken = new UserToken();
 
-        if (userTokenAuthentication instanceof UserTokenAuthentication token) {
-            userToken.setName(token.getName());
+        userToken.setName(userTokenAuthenticationToken.getName());
+        userToken.setEnabled(userTokenAuthenticationToken.isEnabled());
+        userToken.setUser(user);
+
+        if (userTokenAuthenticationToken.getAuthorities() != null) {
+            userToken.setTokenAuthorities(userTokenAuthenticationToken.getAuthorities());
         }
 
-        if (userTokenAuthentication.getUser() != null) {
-            userToken.setUser(userTokenAuthentication.getUser());
-        } else {
-            userToken.setUser(userService.getAuthenticatedUser().orElse(null));
-        }
+        userToken.setCredentialsExpiration(TimeAndDates.toTimestamp(userTokenAuthenticationToken.getExpiration()));
 
-        userToken.setTokenAuthorities(userTokenAuthentication.getAuthorities());
-        if (userTokenAuthentication.getExpiration() != null) {
-            userToken.setCredentialsExpiration(Timestamp.from(userTokenAuthentication.getExpiration()));
-        }
+        String secret = stringKeyGenerator.generateKey();
+        userToken.setSecret(passwordEncoder.encode(secret));
 
-        userToken.setEnabled(true);
+        UserToken issuedToken = userTokenRepository.save(userToken);
 
-        String generatedKey = stringKeyGenerator.generateKey();
-        userToken.setTokenHash(passwordEncoder.encode(generatedKey));
-
-        userTokenRepository.save(userToken);
-        return generatedKey;
+        return UserTokenDto.builder()
+                .id(issuedToken.getId())
+                .name(issuedToken.getName())
+                .secret(secret)
+                .authorities(issuedToken.getAuthorities())
+                .enabled(issuedToken.isEnabled())
+                .issuedAt(TimeAndDates.toInstant(issuedToken.getCreatedAt()))
+                .expiration(TimeAndDates.toInstant(issuedToken.getCredentialsExpiration()))
+                .build();
     }
 
     @Override
-    public UserTokenDto issueUserToken(UserTokenAuthentication userTokenAuthentication) {
-        String apiSecret = createUserToken(userTokenAuthentication);
-        UserTokenDto userTokenDto = new UserTokenDto();
-        userTokenDto.setName(userTokenAuthentication.getName());
-        userTokenDto.setSecret(apiSecret);
-        userTokenDto.setEnabled(true);
-        userTokenDto.setIssuedAt(userTokenAuthentication.getIssuedAt());
-        userTokenDto.setExpiration(userTokenAuthentication.getExpiration());
-        userTokenDto.setAuthorities(userTokenAuthentication.getAuthorities());
-        return userTokenDto;
+    @Transactional
+    public UserTokenDto issueUserToken(UserTokenDto userTokenDto) {
+        UserTokenAuthenticationToken token = new UserTokenAuthenticationToken(new UserToken() {
+            private List<GrantedAuthority> authorities;
+
+            @Override
+            public String getName() {
+                return userTokenDto.getName();
+            }
+
+            @Override
+            public User getUser() {
+                return authenticatedUserService.loadAuthenticatedUser()
+                        .orElseThrow(() -> new IllegalStateException("authenticated user required to issue new UserToken"));
+            }
+
+            @Override
+            public List<GrantedAuthority> getAuthorities() {
+                if (userTokenDto.getAuthorities() == null) {
+                    return Collections.emptyList();
+                }
+                if (authorities != null) {
+                    return authorities;
+                }
+                authorities = new ArrayList<>();
+                authorities.addAll(userTokenDto.getAuthorities());
+                return authorities;
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return userTokenDto.getEnabled() == null || userTokenDto.getEnabled();
+            }
+
+            @Override
+            public Timestamp getCredentialsExpiration() {
+                return TimeAndDates.toTimestamp(userTokenDto.getExpiration());
+            }
+
+        });
+
+        return issueUserToken(token);
     }
 
     @Override
     public List<UserTokenDto> getAllIssuedTokens() {
-        return userService.getAuthenticatedUser()
+        return authenticatedUserService.loadAuthenticatedUser()
                 .map(userTokenRepository::findAllByUser)
-                .map(userTokens -> userTokens.stream()
-                        .map(userToken -> UserTokenDto.builder()
-                                .name(userToken.getName())
-                                .issuedAt(userToken.getCreatedAt().toInstant())
-                                .enabled(userToken.isEnabled())
-                                .expiration(TimeAndDates.toInstant(userToken.getCredentialsExpiration()))
-                                .authorities(userToken.getTokenAuthorities())
-                                .build()
-                        ).toList())
-                .orElseThrow(() -> new ResourceNotFoundException("don't found any issued token"));
+                .map(userTokens -> {
+                    if (userTokens.isEmpty()) {
+                        throw new ResourceNotFoundException("No issued API key found");
+                    }
+                    return userTokens.stream()
+                            .map(userToken -> UserTokenDto.builder()
+                                    .id(userToken.getId())
+                                    .name(userToken.getName())
+                                    .authorities(userToken.getAuthorities())
+                                    .enabled(userToken.isEnabled())
+                                    .issuedAt(userToken.getCreatedAt().toInstant())
+                                    .expiration(TimeAndDates.toInstant(userToken.getCredentialsExpiration()))
+                                    .build()
+                            ).toList();
+                })
+                .orElseThrow(() ->
+                        new UnauthorizedAccessException("Don't have enough permission to access issued tokens"));
     }
 
     @Override
+    @Transactional
     public void setExpiration(UUID tokenId, Instant expiration) {
-        UserToken userToken = getAuthorizedUserToken(tokenId)
-                .orElseThrow(() ->
-                        new UnauthorizedActionException("Insufficient permissions to change expiration of this token"));
-        userToken.setCredentialsExpiration(Timestamp.from(expiration));
+        UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
+        userToken.setCredentialsExpiration(TimeAndDates.toTimestamp(expiration));
         userTokenRepository.save(userToken);
     }
 
-    private Optional<UserToken> getAuthorizedUserToken(UUID tokenId) {
-        return userService.getAuthenticatedUser()
-                .map(user -> userTokenRepository.findByIdAndUser(tokenId, user));
+    private UserToken getUserTokenIssuedByAuthenticatedUser(UUID tokenId) {
+        Optional<User> user = authenticatedUserService.loadAuthenticatedUser();
+        if (user.isEmpty()) {
+            throw new UnauthorizedActionException("Insufficient permissions to access the token");
+        }
+        return userTokenRepository.findByIdAndUser(tokenId, user.get())
+                .orElseThrow(() -> new ResourceNotFoundException("Token not exists"));
     }
 
 
     private UserToken getUserTokenByEncodedHash(String hash) {
-        return userTokenRepository.findByTokenHash(passwordEncoder.encode(hash))
+        return userTokenRepository.findBySecret(passwordEncoder.encode(hash))
                 .orElseThrow(() -> new BadCredentialsException("API key not valid"));
     }
 
     @Override
+    @Transactional
     public void invalidate(UUID tokenId) {
-        UserToken userToken = getAuthorizedUserToken(tokenId)
-                .orElseThrow(() ->
-                        new UnauthorizedActionException("Insufficient permissions to invalidate this token"));
+        UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
         userToken.disable();
         userTokenRepository.save(userToken);
     }
 
     @Override
+    @Transactional
     public void invalidateAll() {
-        userService.getAuthenticatedUser()
+        authenticatedUserService.loadAuthenticatedUser()
                 .ifPresent(user -> disableAllToken(userTokenRepository.findAllByUser(user)));
     }
 
     @Override
+    @Transactional
     public void invalidateAllByToken(List<UUID> tokenIds) {
-        userService.getAuthenticatedUser()
+        authenticatedUserService.loadAuthenticatedUser()
                 .ifPresent(user -> disableAllToken(userTokenRepository.findAllByIdInAndUser(tokenIds, user)));
     }
 
     private void disableAllToken(List<UserToken> userTokens) {
         userTokenRepository.saveAll(userTokens.stream()
                 .filter(UserToken::isEnabled)
-                .peek(UserToken::disable)
+                .map(UserToken::disable)
                 .toList());
     }
 
     @Override
+    @Transactional
     public void delete(UUID tokenId) {
-        userTokenRepository.delete(getAuthorizedUserToken(tokenId)
-                .orElseThrow(() -> new UnauthorizedActionException("Insufficient permissions to delete this token")));
+        userTokenRepository.delete(getUserTokenIssuedByAuthenticatedUser(tokenId));
     }
 
     @Override
+    @Transactional
     public void deleteAll() {
-        userService.getAuthenticatedUser()
+        authenticatedUserService.loadAuthenticatedUser()
                 .ifPresent(userTokenRepository::deleteAllByUser);
     }
 
     @Override
+    @Transactional
     public void deleteAllByTokenId(List<UUID> tokenIds) {
-        userService.getAuthenticatedUser()
+        authenticatedUserService.loadAuthenticatedUser()
                 .ifPresent(user -> userTokenRepository.deleteAllByIdInAndUser(tokenIds, user));
     }
 
     @Override
-    public void setAuthorities(UUID tokenId, List<GrantedAuthority> authorities) {
-        UserToken userToken = getAuthorizedUserToken(tokenId)
-                .orElseThrow(() -> new UnauthorizedActionException("\"Insufficient permissions to set authorities"));
+    @Transactional
+    public void setAuthorities(UUID tokenId, List<? extends GrantedAuthority> authorities) {
+        UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
         userToken.setTokenAuthorities(authorities);
         userTokenRepository.save(userToken);
     }
 
     @Override
-    public void addAuthorities(UUID tokenId, List<GrantedAuthority> authorities) {
-        UserToken userToken = getAuthorizedUserToken(tokenId)
-                .orElseThrow(() -> new UnauthorizedActionException("Insufficient permissions to add authorities"));
+    @Transactional
+    public void addAuthorities(UUID tokenId, List<? extends GrantedAuthority> authorities) {
+        UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
         userToken.addTokenAuthorities(authorities);
         userTokenRepository.save(userToken);
+    }
+
+    @Override
+    @Transactional
+    public UserTokenDto update(UUID tokenId, UserTokenUpdateRequestModel userTokenUpdateRequestModel) {
+        UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
+        if (Preconditions.nonNullAndNonBlank(userTokenUpdateRequestModel.getName())) {
+            String spaceNormalizedName = StringUtils.normalizeSpace(userTokenUpdateRequestModel.getName());
+            if (userTokenRepository.existsByNameAndUser(spaceNormalizedName, userToken.getUser())) {
+                throw new DuplicateResourceException(
+                        "token with then name '" + userTokenUpdateRequestModel.getName() + "' already exists");
+            }
+            userToken.setName(spaceNormalizedName);
+        }
+
+        if (userTokenUpdateRequestModel.getEnabled() != null) {
+            userToken.setEnabled(userTokenUpdateRequestModel.getEnabled());
+        }
+
+        userToken.setCredentialsExpiration(TimeAndDates.toTimestamp(userTokenUpdateRequestModel.getExpiration()));
+
+        if (userTokenUpdateRequestModel.getAuthorities() != null) {
+            userToken.setTokenAuthorities(userTokenUpdateRequestModel.getAuthorities());
+        }
+
+        UserToken updatedUserToken = userTokenRepository.save(userToken);
+
+        return UserTokenDto.builder()
+                .name(updatedUserToken.getName())
+                .authorities(updatedUserToken.getAuthorities())
+                .enabled(updatedUserToken.isEnabled())
+                .issuedAt(updatedUserToken.getCreatedAt().toInstant())
+                .expiration(TimeAndDates.toInstant(userToken.getCredentialsExpiration()))
+                .build();
     }
 
 }

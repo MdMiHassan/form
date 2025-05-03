@@ -12,6 +12,7 @@ spring:
       minimum-idle: 5
       maximum-pool-size: 20
       idle-timeout: 30000
+      auto-commit: false
 
   jpa:
     # ─────── JPA / Hibernate ───────
@@ -21,20 +22,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
+    open-in-view: false
 
 form:
   security:
     config:
-      secrets:
+      secret:
         key: wrZ97kPP_lxltSTDIVQYfiTcXpBG7eVwi-EKy0qXTXE
     api:
       key:
         refresh:
-          # refreshKeyTimeout (in milliseconds)
-          timeout: 86_400_000   # e.g. 24h = 86,400,000ms
+          timeout: 86_400_000   # 24h = 86,400,000ms
         access:
-          # access timeout (in milliseconds)
-          timeout: 3_600_000    # e.g. 1h = 3,600,000ms
+          timeout: 3_600_000    # 1h = 3,600,000ms
 
       cors:
         allowed:

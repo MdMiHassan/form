@@ -10,9 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -27,22 +25,24 @@ public class UserToken {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.DETACH)
     private User user;
 
+    @Column(nullable = false)
     private String name;
 
     private boolean enabled;
 
     @Column(updatable = false, unique = true)
-    private String tokenHash;
+    private String secret;
 
     private Timestamp lastConnectedAt;
 
     private Timestamp credentialsExpiration;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<TokenAuthorities> tokenAuthorities;
+    @Enumerated(EnumType.STRING)
+    private Set<TokenAuthorities> tokenAuthorities;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -51,7 +51,7 @@ public class UserToken {
     @UpdateTimestamp
     private Timestamp updatedAt;
 
-    public List<GrantedAuthority> getTokenAuthorities() {
+    public List<GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (TokenAuthorities auth : tokenAuthorities) {
             authorities.add(new SimpleGrantedAuthority(auth.toString()));
@@ -59,46 +59,47 @@ public class UserToken {
         return authorities;
     }
 
-    public void setTokenAuthorities(List<GrantedAuthority> grantedAuthorities) {
-        List<TokenAuthorities> authorities = new ArrayList<>();
+    public void setTokenAuthorities(List<? extends GrantedAuthority> grantedAuthorities) {
+        Set<TokenAuthorities> authorities = new HashSet<>();
         for (GrantedAuthority auth : grantedAuthorities) {
-            authorities.add(TokenAuthorities.of(auth.getAuthority()));
+            authorities.add(TokenAuthorities.from(auth.getAuthority()));
         }
         tokenAuthorities = authorities;
     }
 
-    public void addTokenAuthorities(List<GrantedAuthority> grantedAuthorities) {
+    public void addTokenAuthorities(List<? extends GrantedAuthority> grantedAuthorities) {
         if (tokenAuthorities == null) {
-            tokenAuthorities = new ArrayList<>();
+            tokenAuthorities = new HashSet<>();
         }
         for (GrantedAuthority auth : grantedAuthorities) {
-            tokenAuthorities.add(TokenAuthorities.of(auth.getAuthority()));
+            tokenAuthorities.add(TokenAuthorities.from(auth.getAuthority()));
         }
     }
 
-    public boolean isValidToken() {
-        return enabled && (credentialsExpiration == null || Timestamp.from(Instant.now()).before(credentialsExpiration));
+    public boolean isTokenAuthenticated() {
+        return enabled && (credentialsExpiration == null || credentialsExpiration.before(Timestamp.from(Instant.now())));
     }
 
-    public void disable() {
+    public UserToken disable() {
         enabled = false;
+        return this;
     }
 
-    private enum TokenAuthorities {
+    public enum TokenAuthorities {
 
         FORM_CREATE,
         FORM_UPDATE,
         FORM_DELETE;
 
-        public static TokenAuthorities of(String tokenAuthorities) {
+        public static TokenAuthorities from(String tokenAuthorities) {
             if (tokenAuthorities == null) {
-                return null;
+                throw new IllegalArgumentException("token authorities must not be null");
             }
             return switch (tokenAuthorities.toLowerCase()) {
                 case "form_create" -> FORM_CREATE;
                 case "form_update" -> FORM_UPDATE;
                 case "form_delete" -> FORM_DELETE;
-                default -> throw new IllegalStateException("Unexpected value: " + tokenAuthorities.toLowerCase());
+                default -> throw new IllegalArgumentException("Unexpected value: " + tokenAuthorities.toLowerCase());
             };
         }
     }

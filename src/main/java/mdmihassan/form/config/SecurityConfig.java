@@ -1,11 +1,11 @@
 package mdmihassan.form.config;
 
 import io.jsonwebtoken.security.Keys;
+import mdmihassan.form.auth.UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${form.security.config.secrets.key}")
+    @Value("${form.security.config.secret.key}")
     private String secretKey;
 
     @Bean
@@ -33,11 +33,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
-                                                         PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(passwordEncoder);
-        authProvider.setUserDetailsService(userDetailsService);
-        return authProvider;
+    public UserAuthenticationProvider daoAuthenticationProvider(UserDetailsService userDetailsService,
+                                                                PasswordEncoder passwordEncoder) {
+        UserAuthenticationProvider userAuthenticationProvider = new UserAuthenticationProvider(passwordEncoder);
+        userAuthenticationProvider.setUserDetailsService(userDetailsService);
+        return userAuthenticationProvider;
     }
 
     @Bean

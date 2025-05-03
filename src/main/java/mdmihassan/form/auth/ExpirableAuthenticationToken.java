@@ -1,11 +1,13 @@
 package mdmihassan.form.auth;
 
+import lombok.Getter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.time.Instant;
 import java.util.Collection;
 
+@Getter
 public abstract class ExpirableAuthenticationToken extends AbstractAuthenticationToken {
 
     private final Instant issuedAt;
@@ -14,6 +16,12 @@ public abstract class ExpirableAuthenticationToken extends AbstractAuthenticatio
     protected ExpirableAuthenticationToken(Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.issuedAt = Instant.now();
+    }
+
+    protected ExpirableAuthenticationToken(Collection<? extends GrantedAuthority> authorities, long timeout) {
+        super(authorities);
+        this.issuedAt = Instant.now();
+        this.expiration = issuedAt.plusMillis(timeout);
     }
 
     protected ExpirableAuthenticationToken(Collection<? extends GrantedAuthority> authorities, Instant expiration) {
@@ -44,7 +52,7 @@ public abstract class ExpirableAuthenticationToken extends AbstractAuthenticatio
         if (expiration == null) {
             return true;
         }
-        return expiration.isBefore(Instant.now());
+        return expiration.isAfter(Instant.now());
     }
 
 }
