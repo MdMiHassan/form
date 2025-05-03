@@ -9,8 +9,8 @@ public class SecurityContextHelper {
         return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    public static void setAuthentication(UserAuthenticationToken userAuthenticationToken) {
-        SecurityContextHolder.getContext().setAuthentication(userAuthenticationToken);
+    public static void setAuthentication(Authentication authentication) {
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
 }

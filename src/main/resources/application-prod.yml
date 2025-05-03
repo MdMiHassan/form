@@ -23,18 +23,16 @@ spring:
 form:
   security:
     config:
-      secrets:
+      secret:
         key:
     api:
       key:
         refresh:
-          # refreshKeyTimeout (in milliseconds)
-          timeout: 86_400_000   # e.g. 24h = 86,400,000ms
+          timeout: 86_400_000   # 24h = 86,400,000ms
         access:
-          # access timeout (in milliseconds)
-          timeout: 3_600_000    # e.g. 1h = 3,600,000ms
+          timeout: 3_600_000    # 1h = 3,600,000ms
 
       cors:
         allowed:
-          origins: http://localhost:8080,http://127.0.0.1:8080
-          methods: GET,POST,PUT,DELETE,PATCH
+          origins:
+          methods:

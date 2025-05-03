@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
 
-    Optional<UserToken> findByTokenHash(String tokenHash);
+    Optional<UserToken> findBySecret(String tokenHash);
 
     List<UserToken> findAllByUserId(UUID id);
 
@@ -20,8 +20,9 @@ public interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
 
     void deleteAllByUser(User user);
 
-    UserToken findByIdAndUser(UUID tokenId, User user);
+    Optional<UserToken> findByIdAndUser(UUID tokenId, User user);
 
     void deleteAllByIdInAndUser(List<UUID> tokenIds, User user);
 
+    boolean existsByNameAndUser(String name, User user);
 }

@@ -37,9 +37,10 @@ public class User implements UserDetails {
     private String password;
 
     @Column(nullable = false, unique = true)
-    private String email;
+    private String primaryEmail;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
     private boolean locked;
@@ -50,7 +51,7 @@ public class User implements UserDetails {
 
     private Timestamp credentialsExpiration;
 
-    private boolean emailVerified;
+    private boolean primaryEmailVerified;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -125,9 +126,55 @@ public class User implements UserDetails {
         }
     }
 
+    public User enable() {
+        enabled = true;
+        return this;
+    }
+
+    public User disable() {
+        enabled = false;
+        return this;
+    }
+
+    public User lock() {
+        locked = true;
+        return this;
+    }
+
+    public User unlock() {
+        locked = false;
+        return this;
+    }
+
+    public User primaryEmailVerified() {
+        primaryEmailVerified = true;
+        return this;
+    }
+
+    public void setAuthorities(List<? extends GrantedAuthority> grantedAuthorities) {
+        roles = new HashSet<>();
+        for (GrantedAuthority auth : grantedAuthorities) {
+            roles.add(Role.from(auth.getAuthority()));
+        }
+    }
+
     public enum Role {
+
         ADMIN,
-        USER
+        USER;
+
+        public static Role from(String role) {
+            if (role == null) {
+                throw new IllegalArgumentException("role must not be null");
+            }
+
+            return switch (role.toLowerCase()) {
+                case "admin" -> ADMIN;
+                case "user" -> USER;
+                default -> throw new IllegalArgumentException("Unexpected value: " + role);
+            };
+        }
+
     }
 
 }

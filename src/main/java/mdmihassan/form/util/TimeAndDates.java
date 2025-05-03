@@ -18,4 +18,8 @@ public class TimeAndDates {
         return instant == null ? null : Date.from(instant);
     }
 
+    public static Timestamp toTimestamp(Instant instant) {
+        return instant == null ? null : Timestamp.from(instant);
+    }
+
 }

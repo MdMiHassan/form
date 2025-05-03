@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import mdmihassan.form.service.TokenService;
+import mdmihassan.form.util.Preconditions;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,9 +17,9 @@ import java.io.IOException;
 @Slf4j
 public class UserTokenAuthFilter extends OncePerRequestFilter {
 
-    private final TokenService<UserTokenAuthentication> tokenService;
+    private final TokenService<UserTokenAuthenticationToken> tokenService;
 
-    public UserTokenAuthFilter(TokenService<UserTokenAuthentication> tokenService) {
+    public UserTokenAuthFilter(TokenService<UserTokenAuthenticationToken> tokenService) {
         this.tokenService = tokenService;
     }
 
@@ -27,7 +28,7 @@ public class UserTokenAuthFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         String token = request.getHeader("X-API-KEY");
-        if (token != null) {
+        if (Preconditions.nonNullAndNonBlank(token)) {
             SecurityContextHelper.setAuthentication(tokenService.parse(token));
         }
         filterChain.doFilter(request, response);

@@ -1,8 +1,8 @@
 package mdmihassan.form.config;
 
 import lombok.RequiredArgsConstructor;
-import mdmihassan.form.auth.UserTokenAuthFilter;
 import mdmihassan.form.auth.JwtTokenAuthFilter;
+import mdmihassan.form.auth.UserTokenAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -38,7 +38,7 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/users/login",
                                 "/api/v1/users/register",
-                                "/api/v1/auth/api/access/tokens"
+                                "/api/v1/auth/users/access/tokens"
                         )
                         .permitAll()
                         .anyRequest()
