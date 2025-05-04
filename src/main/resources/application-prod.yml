@@ -32,7 +32,20 @@ form:
         access:
           timeout: 3_600_000    # 1h = 3,600,000ms
 
-      cors:
-        allowed:
-          origins:
-          methods:
+#    cors:
+#      origins:
+#        allowed:
+#          - url: "http://localhost:8080"
+#            methods:
+#              - GET
+#              - POST
+#              - PUT
+#              - DELETE
+#              - PATCH
+#          - url: "http://127.0.0.1:8080"
+#            methods:
+#              - GET
+#              - POST
+#              - PUT
+#              - DELETE
+#              - PATCH

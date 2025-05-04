@@ -72,6 +72,13 @@ public class User implements UserDetails {
         return authorities;
     }
 
+    public void setAuthorities(List<? extends GrantedAuthority> grantedAuthorities) {
+        roles = new HashSet<>();
+        for (GrantedAuthority auth : grantedAuthorities) {
+            roles.add(Role.from(auth.getAuthority()));
+        }
+    }
+
     @Override
     public String getPassword() {
         return password;
@@ -149,13 +156,6 @@ public class User implements UserDetails {
     public User primaryEmailVerified() {
         primaryEmailVerified = true;
         return this;
-    }
-
-    public void setAuthorities(List<? extends GrantedAuthority> grantedAuthorities) {
-        roles = new HashSet<>();
-        for (GrantedAuthority auth : grantedAuthorities) {
-            roles.add(Role.from(auth.getAuthority()));
-        }
     }
 
     public enum Role {
