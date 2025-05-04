@@ -2,7 +2,6 @@ package mdmihassan.form.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import mdmihassan.form.dto.UserDto;
 import mdmihassan.form.model.APIResponse;
 import mdmihassan.form.model.UserRegistrationRequestModel;
 import mdmihassan.form.model.UserRegistrationResponseModel;

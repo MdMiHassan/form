@@ -9,7 +9,6 @@ import mdmihassan.form.service.AuthenticationService;
 import mdmihassan.form.service.UserTokenService;
 import mdmihassan.form.util.ValueWrapper;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;

@@ -15,6 +15,10 @@ public class Preconditions {
         return !isNullOrBlankInternal(str);
     }
 
+    public static boolean nonNullAndNonEmpty(Object object) {
+        return !isNullOrEmptyInternal(object);
+    }
+
     private static boolean isNullOrBlankInternal(String str) {
         return str == null || str.isBlank();
     }
