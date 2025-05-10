@@ -23,37 +23,37 @@ public class UserDto {
 
     private UUID id;
 
-    @NotNull(message = "firstName is required")
-    @NotBlank(message = "firstName must not be empty")
+    @NotBlank
+    @NotNull
     @Pattern(regexp = "^[\\p{L}\\s\\-.']+$",
-            message = "firstName can only contain letters, spaces, hyphens, periods, and apostrophes")
-    @Size(min = 1, max = 50, message = "firstName must be between 1 and 50 characters")
+            message = "can only contain letters, spaces, hyphens, periods, and apostrophes")
+    @Size(min = 1, max = 50, message = "must be between 1 and 50 characters")
     private String firstName;
 
-    @NotNull(message = "lastName is required")
-    @NotBlank(message = "lastName must not be empty")
+    @NotBlank
+    @NotNull
     @Pattern(regexp = "^[\\p{L}\\s\\-.']+$",
-            message = "lastName can only contain letters, spaces, hyphens, periods, and apostrophes")
-    @Size(min = 1, max = 50, message = "lastName must be between 1 and 50 characters")
+            message = "can only contain letters, spaces, hyphens, periods, and apostrophes")
+    @Size(min = 1, max = 50, message = "must be between 1 and 50 characters")
     private String lastName;
 
-    @NotNull(message = "username is required")
-    @NotBlank(message = "username must not be empty")
-    @Pattern(regexp = "^\\w+$", message = "username can only contain letters, digits, underscores, and periods")
-    @Size(min = 8, max = 30, message = "username must be between 8 and 30 characters")
+    @NotBlank
+    @NotNull
+    @Pattern(regexp = "^\\w+$", message = "can only contain letters, digits, underscores, and periods")
+    @Size(min = 8, max = 30, message = "must be between 8 and 30 characters")
     private String username;
 
-    @NotNull(message = "password is required")
-    @NotBlank(message = "password must not be empty")
-    @Size(min = 8, max = 64, message = "password must be between 8 and 64 characters")
+    @NotBlank
+    @NotNull
+    @Size(min = 8, max = 64, message = "must be between 8 and 64 characters")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^()_+=~])[A-Za-z\\d@$!%*?&#^()_+=~]{8,64}$",
-            message = "password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
+            message = "must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
     private String password;
 
-    @NotNull(message = "primaryEmail is required")
-    @NotBlank(message = "primaryEmail must not be empty")
-    @Email(message = "primaryEmail must represent a valid email address")
-    @Size(max = 100, message = "primaryEmail must not exceed 100 characters")
+    @Email
+    @NotBlank
+    @NotNull
+    @Size(max = 100, message = "must not exceed 100 characters")
     private String primaryEmail;
 
     @JsonDeserialize(contentAs = GrantedAuthorityImpl.class)

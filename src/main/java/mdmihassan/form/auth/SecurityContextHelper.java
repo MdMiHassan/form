@@ -10,7 +10,10 @@ public class SecurityContextHelper {
     }
 
     public static void setAuthentication(Authentication authentication) {
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        Authentication presentedAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        if (presentedAuthentication == null || !presentedAuthentication.isAuthenticated()) {
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
     }
 
 }

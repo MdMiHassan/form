@@ -62,8 +62,8 @@ public class AuthenticationController {
     @PutMapping("/api/secrets/{tokenId}")
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
     public APIResponse<UserTokenDto> updateUserToken(@PathVariable UUID tokenId,
-                                                     @RequestBody @Valid UserTokenUpdateRequestModel userTokenUpdateRequestModel) {
-        return APIResponse.ok(userTokenService.update(tokenId, userTokenUpdateRequestModel),
+                                                     @RequestBody @Valid UserTokenUpdateRequest userTokenUpdateRequest) {
+        return APIResponse.ok(userTokenService.update(tokenId, userTokenUpdateRequest),
                 "API key updated");
     }
 
@@ -83,21 +83,24 @@ public class AuthenticationController {
 
     @PutMapping("/api/secrets/{tokenId}/authorities")
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
-    public APIResponse<?> setUserTokenAuthorities(@PathVariable UUID tokenId, @Valid @RequestBody ValueWrapper<List<GrantedAuthorityImpl>> authorities) {
+    public APIResponse<?> setUserTokenAuthorities(@PathVariable UUID tokenId,
+                                                  @RequestBody @Valid ValueWrapper<List<GrantedAuthorityImpl>> authorities) {
         userTokenService.setAuthorities(tokenId, authorities.getValue());
         return APIResponse.ok("API key authorization updated successfully");
     }
 
     @PatchMapping("/api/secrets/{tokenId}/authorities")
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
-    public APIResponse<?> addUserTokenAuthorities(@PathVariable UUID tokenId, @Valid @RequestBody ValueWrapper<List<GrantedAuthorityImpl>> authorities) {
+    public APIResponse<?> addUserTokenAuthorities(@PathVariable UUID tokenId,
+                                                  @RequestBody @Valid ValueWrapper<List<GrantedAuthorityImpl>> authorities) {
         userTokenService.addAuthorities(tokenId, authorities.getValue());
         return APIResponse.ok("Authorizations added to the API key");
     }
 
     @PutMapping("/api/secrets/{tokenId}/expiration")
     @PreAuthorize("hasAnyAuthority('ADMIN','USER')")
-    public APIResponse<?> changeUserTokenExpiration(@PathVariable UUID tokenId, @RequestBody ValueWrapper<Instant> expiration) {
+    public APIResponse<?> changeUserTokenExpiration(@PathVariable UUID tokenId,
+                                                    @RequestBody ValueWrapper<Instant> expiration) {
         userTokenService.setExpiration(tokenId, expiration.getValue());
         return APIResponse.ok("API key expiration updated");
     }

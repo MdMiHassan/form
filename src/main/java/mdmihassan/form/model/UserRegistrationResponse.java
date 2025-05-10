@@ -10,7 +10,7 @@ import mdmihassan.form.dto.UserDto;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRegistrationResponseModel {
+public class UserRegistrationResponse {
 
     private boolean verified;
 

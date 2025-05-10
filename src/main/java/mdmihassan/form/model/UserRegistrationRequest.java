@@ -11,7 +11,7 @@ import mdmihassan.form.dto.UserDto;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRegistrationRequestModel {
+public class UserRegistrationRequest {
 
     private String authCode;
 

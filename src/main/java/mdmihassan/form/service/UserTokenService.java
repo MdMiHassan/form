@@ -2,7 +2,7 @@ package mdmihassan.form.service;
 
 import mdmihassan.form.auth.UserTokenAuthenticationToken;
 import mdmihassan.form.dto.UserTokenDto;
-import mdmihassan.form.model.UserTokenUpdateRequestModel;
+import mdmihassan.form.model.UserTokenUpdateRequest;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.time.Instant;
@@ -33,6 +33,6 @@ public interface UserTokenService extends TokenService<UserTokenAuthenticationTo
 
     void addAuthorities(UUID tokenId, List<? extends GrantedAuthority> authorities);
 
-    UserTokenDto update(UUID tokenId, UserTokenUpdateRequestModel userTokenUpdateRequestModel);
+    UserTokenDto update(UUID tokenId, UserTokenUpdateRequest userTokenUpdateRequest);
 
 }

@@ -26,11 +26,11 @@ public class UserTokenDto {
 
     private UUID id;
 
-    @NotNull(message = "token name is required")
-    @NotBlank(message = "token name must not be empty")
+    @NotNull
+    @NotBlank
     @Pattern(regexp = "^[\\p{L}\\d\\s\\-._']+$",
-            message = "Only letters, digits, spaces, hyphens, apostrophes, and periods are allowed")
-    @Size(min = 1, max = 30, message = "name must be between 1 and 30 characters")
+            message = "only letters, digits, spaces, hyphens, apostrophes, and periods are allowed")
+    @Size(min = 1, max = 30, message = "must be between 1 and 30 characters")
     private String name;
 
     private String secret;

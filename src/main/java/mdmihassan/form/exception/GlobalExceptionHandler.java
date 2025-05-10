@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import lombok.extern.slf4j.Slf4j;
 import mdmihassan.form.model.APIResponse;
 import mdmihassan.form.model.APIResponse.ErrorResponse;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
+import mdmihassan.form.model.FieldValidationError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
@@ -32,15 +32,20 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setCode(ErrorResponse.ErrorCode.VALIDATION_FAILED);
         errorResponse.setMessage("Request validation failed");
-        errorResponse.setDetails(getBindingErrorDetails(ex.getBindingResult()));
+        errorResponse.setDetails(buildFieldValidationErrors(ex.getBindingResult()));
         return ResponseEntity.badRequest()
                 .body(APIResponse.badRequest(errorResponse));
     }
 
-    private List<String> getBindingErrorDetails(BindingResult bindingResult) {
-        return bindingResult.getAllErrors()
+    private List<FieldValidationError> buildFieldValidationErrors(BindingResult bindingResult) {
+        return bindingResult.getFieldErrors()
                 .stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .map(fieldError -> FieldValidationError.builder()
+                        .field(fieldError.getField())
+                        .rejectedValue(fieldError.getRejectedValue())
+                        .defaultMessage(fieldError.getDefaultMessage())
+                        .code(fieldError.getCode())
+                        .build())
                 .toList();
     }
 

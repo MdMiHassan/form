@@ -10,7 +10,7 @@ import mdmihassan.form.exception.DuplicateResourceException;
 import mdmihassan.form.exception.ResourceNotFoundException;
 import mdmihassan.form.exception.UnauthorizedAccessException;
 import mdmihassan.form.exception.UnauthorizedActionException;
-import mdmihassan.form.model.UserTokenUpdateRequestModel;
+import mdmihassan.form.model.UserTokenUpdateRequest;
 import mdmihassan.form.repository.UserTokenRepository;
 import mdmihassan.form.service.AuthenticatedUserService;
 import mdmihassan.form.service.UserTokenService;
@@ -247,25 +247,25 @@ public class UserTokenServiceImpl implements UserTokenService {
 
     @Override
     @Transactional
-    public UserTokenDto update(UUID tokenId, UserTokenUpdateRequestModel userTokenUpdateRequestModel) {
+    public UserTokenDto update(UUID tokenId, UserTokenUpdateRequest userTokenUpdateRequest) {
         UserToken userToken = getUserTokenIssuedByAuthenticatedUser(tokenId);
-        if (Preconditions.nonNullAndNonBlank(userTokenUpdateRequestModel.getName())) {
-            String spaceNormalizedName = StringUtils.normalizeSpace(userTokenUpdateRequestModel.getName());
+        if (Preconditions.nonNullAndNonBlank(userTokenUpdateRequest.getName())) {
+            String spaceNormalizedName = StringUtils.normalizeSpace(userTokenUpdateRequest.getName());
             if (userTokenRepository.existsByNameAndUser(spaceNormalizedName, userToken.getUser())) {
                 throw new DuplicateResourceException(
-                        "token with then name '" + userTokenUpdateRequestModel.getName() + "' already exists");
+                        "token with then name '" + userTokenUpdateRequest.getName() + "' already exists");
             }
             userToken.setName(spaceNormalizedName);
         }
 
-        if (userTokenUpdateRequestModel.getEnabled() != null) {
-            userToken.setEnabled(userTokenUpdateRequestModel.getEnabled());
+        if (userTokenUpdateRequest.getEnabled() != null) {
+            userToken.setEnabled(userTokenUpdateRequest.getEnabled());
         }
 
-        userToken.setCredentialsExpiration(TimeAndDates.toTimestamp(userTokenUpdateRequestModel.getExpiration()));
+        userToken.setCredentialsExpiration(TimeAndDates.toTimestamp(userTokenUpdateRequest.getExpiration()));
 
-        if (userTokenUpdateRequestModel.getAuthorities() != null) {
-            userToken.setTokenAuthorities(userTokenUpdateRequestModel.getAuthorities());
+        if (userTokenUpdateRequest.getAuthorities() != null) {
+            userToken.setTokenAuthorities(userTokenUpdateRequest.getAuthorities());
         }
 
         UserToken updatedUserToken = userTokenRepository.save(userToken);

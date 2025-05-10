@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserTokenUpdateRequestModel {
+public class UserTokenUpdateRequest {
 
     @Pattern(regexp = "^[\\p{L}\\d\\s\\-._']+$",
             message = "Only letters, digits, spaces, hyphens, apostrophes, and periods are allowed")
