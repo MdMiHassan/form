@@ -6,8 +6,8 @@ import mdmihassan.form.dto.UserDto;
 import mdmihassan.form.entity.User;
 import mdmihassan.form.exception.DuplicateResourceException;
 import mdmihassan.form.exception.UnauthorizedActionException;
-import mdmihassan.form.model.UserRegistrationRequestModel;
-import mdmihassan.form.model.UserRegistrationResponseModel;
+import mdmihassan.form.model.UserRegistrationRequest;
+import mdmihassan.form.model.UserRegistrationResponse;
 import mdmihassan.form.repository.UserRepository;
 import mdmihassan.form.service.AuthenticatedUserService;
 import mdmihassan.form.service.EmailVerificationService;
@@ -33,16 +33,16 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UserRegistrationResponseModel registerUser(UserRegistrationRequestModel userRegistrationRequestModel) {
-        UserDto userDto = userRegistrationRequestModel.getUser();
+    public UserRegistrationResponse registerUser(UserRegistrationRequest userRegistrationRequest) {
+        UserDto userDto = userRegistrationRequest.getUser();
 
         if (userRepository.existsByPrimaryEmailOrUsername(userDto.getPrimaryEmail(), userDto.getUsername())) {
             throw new DuplicateResourceException("user exists with the provided email or username");
         }
 
         User user = new User();
-        if (Preconditions.nonNullAndNonBlank(userRegistrationRequestModel.getAuthCode())) {
-            if (!emailVerificationService.verifyByAuthCode(userDto.getPrimaryEmail(), userRegistrationRequestModel.getAuthCode())) {
+        if (Preconditions.nonNullAndNonBlank(userRegistrationRequest.getAuthCode())) {
+            if (!emailVerificationService.verifyByAuthCode(userDto.getPrimaryEmail(), userRegistrationRequest.getAuthCode())) {
                 throw new UnauthorizedActionException("email verification failed");
             }
             user.primaryEmailVerified();
@@ -65,6 +65,7 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
                     user.setAuthorities(userDto.getAuthorities());
                 }
                 user.setAccountExpiration(userDto.getAccountExpiration());
+                user.setLocked(userDto.isLocked());
             }
         } else {
             user.setRoles(Set.of(User.Role.USER));
@@ -72,15 +73,14 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
 
         User registerdUser = userRepository.save(user);
 
-        return UserRegistrationResponseModel.builder()
+        return UserRegistrationResponse.builder()
                 .verified(registerdUser.isPrimaryEmailVerified())
                 .user(UserDto.builder()
                         .id(registerdUser.getId())
                         .username(userDto.getUsername())
-                        .primaryEmail(userDto.getPrimaryEmail())
+                        .primaryEmail(registerdUser.getPrimaryEmail())
                         .firstName(registerdUser.getFirstName())
                         .lastName(registerdUser.getLastName())
-                        .primaryEmail(registerdUser.getPrimaryEmail())
                         .enabled(registerdUser.isEnabled())
                         .locked(registerdUser.isLocked())
                         .accountExpiration(registerdUser.getAccountExpiration())
@@ -97,11 +97,15 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
 
     @Override
     public Optional<User> loadAuthenticatedUser() {
+        return Optional.ofNullable(getAuthenticationUser());
+    }
+
+    private User getAuthenticationUser() {
         Authentication authentication = SecurityContextHelper.getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User user) {
-            return Optional.of(user);
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            return null;
         }
-        return Optional.empty();
+        return user;
     }
 
     @Override
