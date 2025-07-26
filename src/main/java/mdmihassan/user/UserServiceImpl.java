@@ -34,35 +34,10 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
         }
 
         User user = new User();
-        if (Preconditions.nonNullAndNonBlank(userRegistrationRequest.getAuthCode())) {
-            if (!emailVerificationService.verifySecret(userDto.getPrimaryEmail(), userRegistrationRequest.getAuthCode())) {
-                throw new UnauthorizedActionException("email verification failed");
-            }
-            user.primaryEmailVerified();
-        } else {
-            emailVerificationService.issueChallenge(userDto.getPrimaryEmail());
-        }
 
-        user.setFirstName(StringUtils.normalizeSpace(userDto.getFirstName()));
-        user.setLastName(StringUtils.normalizeSpace(userDto.getLastName()));
-        user.setUsername(userDto.getUsername());
-        user.setPrimaryEmail(userDto.getPrimaryEmail());
-        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-        user.enable();
-
-        Optional<User> authenticatedUser = loadAuthenticatedUser();
-        if (authenticatedUser.isPresent()) {
-            User authUser = authenticatedUser.get();
-            if (authUser.hasRole(User.Role.ADMIN)) {
-                if (userDto.getAuthorities() != null) {
-                    user.setAuthorities(userDto.getAuthorities());
-                }
-                user.setAccountExpiration(userDto.getAccountExpiration());
-                user.setLocked(userDto.isLocked());
-            }
-        } else {
-            user.setRoles(Set.of(User.Role.USER));
-        }
+        verifyOrChallengeRegistrationEmail(userRegistrationRequest, user);
+        addBasicRegistrationDetails(userDto, user);
+        assignRolesAndPrivileges(userDto, user);
 
         User registerdUser = userRepository.save(user);
 
@@ -70,7 +45,7 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
                 .verified(registerdUser.isPrimaryEmailVerified())
                 .user(UserDto.builder()
                         .id(registerdUser.getId())
-                        .username(userDto.getUsername())
+                        .username(registerdUser.getUsername())
                         .primaryEmail(registerdUser.getPrimaryEmail())
                         .firstName(registerdUser.getFirstName())
                         .lastName(registerdUser.getLastName())
@@ -81,6 +56,44 @@ public class UserServiceImpl implements UserService, AuthenticatedUserService {
                         .authorities(registerdUser.getAuthorities())
                         .build())
                 .build();
+    }
+
+    private void verifyOrChallengeRegistrationEmail(UserRegistrationRequest userRegistrationRequest, User user) {
+        UserDto requestedUserDetails = userRegistrationRequest.getUser();
+        if (Preconditions.nonNullAndNonBlank(userRegistrationRequest.getAuthCode())) {
+            if (!emailVerificationService.verifySecret(requestedUserDetails.getPrimaryEmail(), userRegistrationRequest.getAuthCode())) {
+                throw new UnauthorizedActionException("email verification failed");
+            }
+            user.primaryEmailVerified();
+        } else {
+            emailVerificationService.issueChallenge(requestedUserDetails.getPrimaryEmail());
+        }
+        user.enable();
+    }
+
+    private void addBasicRegistrationDetails(UserDto userDetails, User user) {
+        user.setFirstName(StringUtils.normalizeSpace(userDetails.getFirstName()));
+        user.setLastName(StringUtils.normalizeSpace(userDetails.getLastName()));
+        user.setUsername(userDetails.getUsername());
+        user.setPrimaryEmail(userDetails.getPrimaryEmail());
+        user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+    }
+
+    private void assignRolesAndPrivileges(UserDto userDto, User user) {
+        Optional<User> authenticatedUser = loadAuthenticatedUser();
+        if (authenticatedUser.isPresent()) {
+            User authUser = authenticatedUser.get();
+            if (authUser.hasRole(User.Role.ADMIN)) {
+                if (userDto.getAuthorities() != null) {
+                    user.setAuthorities(userDto.getAuthorities());
+                }
+                user.setAccountExpiration(userDto.getAccountExpiration());
+                user.setCredentialsExpiration(userDto.getCredentialsExpiration());
+                user.setLocked(userDto.isLocked());
+            }
+        } else {
+            user.setRoles(Set.of(User.Role.USER));
+        }
     }
 
     @Override
